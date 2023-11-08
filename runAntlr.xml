@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="targets" default="generate SQLite.g4" basedir="src/guardedsql/grammar">
+     <target name="generate SQLite.g4" description="generate SQLite.g4">
+        <java fork="true" jar="../../../lib/antlr-4.7.1-complete.jar">
+            <arg value="SQLite.g4"/>
+        </java>
+    </target>
+
+
+</project>

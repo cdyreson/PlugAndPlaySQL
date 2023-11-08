@@ -1,0 +1,206 @@
+package guardedsql.grammar;
+
+import guardedsql.database.DB;
+import guardedsql.guard.GuardTree;
+import guardedsql.joingraph.Graph;
+import guardedsql.tree.PatternTree;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+
+/**
+ * @author Curtis Dyreson
+ */
+public class MyListener extends SQLiteBaseListener {
+
+    Boolean verbose = true;
+    SQLiteParser parser;
+    GuardTree guardTree;
+
+    private static PatternTree tree;
+    private static DB db;
+    private static Stack<PatternTree> treeStack;
+    private static Graph joinGraph;
+
+    public MyListener(SQLiteParser parser, GuardTree guardTree) {
+        this.parser = parser;
+        this.guardTree = guardTree;
+    }
+
+    public void enterParse(SQLiteParser.ParseContext ctx) {
+        if (verbose) {
+            System.out.println("Enter Parse");
+        }
+    }
+
+    public void exitParse(SQLiteParser.ParseContext ctx) {
+        if (verbose) {
+            System.out.println("Exit Parse");
+        }
+    }
+
+    public void exitExpr(SQLiteParser.ExprContext ctx) {
+
+        if (verbose) {
+            System.out.println("entering expression " + ctx.getText());
+        }
+        if (ctx.literal_value() != null) {
+            if (verbose) {
+                System.out.println("literal " + ctx.literal_value().getText());
+            }
+
+        } else if (ctx.comp_op() != null) {
+            if (verbose) {
+                System.out.println("expr " + ctx.expr(0).getText());
+                System.out.println("comp_op " + ctx.comp_op().getText());
+                System.out.println("expr " + ctx.expr(1).getText());
+            }
+
+        } else if (ctx.K_AND() != null) {
+            if (verbose) {
+                System.out.println("expr " + ctx.expr(0).getText());
+                System.out.println("AND ");
+                System.out.println("expr " + ctx.expr(1).getText());
+            }
+
+        } else if (ctx.K_OR() != null) {
+            if (verbose) {
+                System.out.println("expr " + ctx.expr(0).getText());
+                System.out.println("OR ");
+                System.out.println("expr " + ctx.expr(1).getText());
+            }
+
+        } else if (ctx.column_name() != null) {
+            String name = ((ctx.table_name() == null) ? "" : ctx.table_name().getText() + ".") + ctx.column_name().getText();
+            if (verbose) {
+                System.out.println("column " + name);
+            }
+
+        }
+    }
+
+    public void exitGroupby_clause(SQLiteParser.Groupby_clauseContext ctx) {
+
+    }
+
+    public void exitGroupby_expr(SQLiteParser.Groupby_exprContext ctx) {
+        if (ctx.expr() != null) {
+
+            if (verbose) {
+                System.out.println("exit group by expr");
+            }
+        }
+    }
+
+    public void exitHaving_clause(SQLiteParser.Having_clauseContext ctx) {
+        if (verbose) {
+            System.out.println("exit having");
+        }
+    }
+
+    public void exitResult_column(SQLiteParser.Result_columnContext ctx) {
+        if (verbose)
+            System.out.println("Entering Result");
+        if (ctx.expr() != null) {
+            System.out.println("Ctx expr " + ctx.expr().getText());
+        } else if (ctx.table_name() != null) {
+            System.out.println("table name+ " + ctx.table_name().getText());
+        } else {
+            System.out.println("null");
+        }
+    }
+
+    public void enterGuard_clause(SQLiteParser.Guard_clauseContext ctx) {
+//        if (verbose) {
+//
+//            int x = ctx.getChildCount();
+//            List<String> temp = new ArrayList<>();
+//            for (int i = 0; i < x; i++) {
+//                if (ctx.any_name(i) != null) {
+//                    String s = ctx.any_name(i).toStringTree();
+//                    s = s.replaceAll("[^a-zA-Z]", "");
+//                    temp.add(s);
+//                }
+//            }
+//            guardTree.getTreeNodes(temp);
+//            guardTree.printTree();
+//        }
+    }
+
+
+    public void enterOuter_guard_clause(SQLiteParser.Outer_guard_clauseContext ctx) {
+        treeStack = new Stack<>();
+        db = ctx.db;
+        db = (db == null) ? DB.getInstance() : db;
+        tree = new PatternTree(db);
+        joinGraph = new Graph(db);
+    }
+
+    public void exitOuter_guard_clause(SQLiteParser.Outer_guard_clauseContext ctx) {
+        try {
+            tree.computeTreePaths(joinGraph);
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void enterGuard_obj(SQLiteParser.Guard_objContext ctx) {
+        treeStack.push(tree);
+        PatternTree child = new PatternTree(db);
+        treeStack.push(tree);
+        tree = child;
+    }
+
+    public void exitGuard_obj(SQLiteParser.Guard_objContext ctx) {
+        tree = treeStack.pop();
+    }
+
+    public void enterGuard_pair(SQLiteParser.Guard_pairContext ctx) {
+        String key = ctx.STRING().getText();
+        key = key.replace("\"", "");
+        tree = treeStack.peek();
+        PatternTree child = new PatternTree(db, tree, key);
+        tree.addChild(child);
+        tree = child;
+        treeStack.push(child);
+    }
+
+    public void exitGuard_pair(SQLiteParser.Guard_pairContext ctx) {
+        tree = treeStack.peek();
+    }
+
+    public void enterGuard_array(SQLiteParser.Guard_arrayContext ctx) {
+        PatternTree child = new PatternTree(db);
+        treeStack.push(tree);
+        tree = child;
+    }
+
+    public void exitGuard_array(SQLiteParser.Guard_arrayContext ctx) {
+        tree = treeStack.pop();
+    }
+
+    public void enterGuard_value(SQLiteParser.Guard_valueContext ctx) {
+        List<String> temp = new ArrayList<>();
+        String value = ctx.STRING().getText();
+        System.out.println(value+"in enter guard clause");
+        //value = value.replace("\"", "");
+        value = value.replaceAll("[^a-zA-Z]", "");
+        temp.add(value);
+        guardTree.getTreeNodes(temp);
+        guardTree.printTree();
+        tree = treeStack.pop();
+        tree.buildPotentialLabels(value);
+        guardTree.getTreeNodes(temp);
+        guardTree.printTree();
+
+
+    }
+
+    public void exitGuard_value(SQLiteParser.Guard_valueContext ctx) {
+    }
+
+}
+

@@ -1,0 +1,1 @@
+GUARD name {  hr    { namefirst {        name    }      namelast    }     } SELECT DISTINCT nameFirst, nameLast WHERE name like '%Montreal Expos%';

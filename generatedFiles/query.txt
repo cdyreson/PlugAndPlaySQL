@@ -1,0 +1,57 @@
+SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM batting 
+LEFT JOIN people ON people.playerid = batting.playerid
+LEFT JOIN teams ON batting.lgid = teams.lgid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!people,batting,playerid@batting,teams,teamid@battingpost,people,playerid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM appearances 
+LEFT JOIN people ON people.playerid = appearances.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+LEFT JOIN teams ON appearances.lgid = teams.lgid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!people,appearances,playerid@battingpost,people,playerid@appearances,teams,teamid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN battingpost ON battingpost.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = battingpost.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!people,battingpost,playerid@battingpost,people,playerid@battingpost,teams,teamid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN fieldingpost ON fieldingpost.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = fieldingpost.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!fieldingpost,teams,teamid@battingpost,people,playerid@people,fieldingpost,playerid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM fieldingofsplit 
+LEFT JOIN people ON people.playerid = fieldingofsplit.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+LEFT JOIN teams ON fieldingofsplit.lgid = teams.lgid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!battingpost,people,playerid@people,fieldingofsplit,playerid@fieldingofsplit,teams,teamid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM salaries 
+LEFT JOIN teams ON salaries.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = salaries.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!salaries,teams,teamid@battingpost,people,playerid@people,salaries,playerid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN pitching ON pitching.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = pitching.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!pitching,teams,teamid@people,pitching,playerid@battingpost,people,playerid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN fielding ON fielding.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = fielding.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!people,fielding,playerid@fielding,teams,teamid@battingpost,people,playerid@!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM battingpost, people, teams 
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!teams!!!9984926!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM pitchingpost 
+LEFT JOIN teams ON pitchingpost.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = pitchingpost.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!pitchingpost,teams,teamid@people,pitchingpost,playerid@battingpost,people,playerid@!!!6716345!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN managers ON managers.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = managers.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!managers,teams,teamid@people,managers,playerid@battingpost,people,playerid@!!!4212508!!!SELECT DISTINCT battingpost."hr", people."namelast", people."namefirst", teams."name"
+FROM teams 
+LEFT JOIN managershalf ON managershalf.lgid = teams.lgid
+LEFT JOIN people ON people.playerid = managershalf.playerid
+LEFT JOIN battingpost ON battingpost.playerid = people.playerid
+ORDER BY battingpost."hr", people."namelast", people."namefirst", teams."name"!!!managershalf,teams,teamid@people,managershalf,playerid@battingpost,people,playerid@!!!125505!!!ORDER BY "hr", "namelast", "namefirst", "name"
