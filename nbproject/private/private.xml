@@ -3,14 +3,14 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/test/Test1.sql</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/gui/Main.java</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/gui/fxmlFiles/dbconfig.fxml</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/guardedsql/inference/TableTree.java</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/guardedsql/inference/grammar/MyListener.java</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/guardedsql/database/DB.java</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/src/gui/Controller.java</file>
-            <file>file:/D:/Dropbox/netbeans/PlugAndPlaySQL/test/test2.sql</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/grammar/SQLiteParser.java</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/Syntax1.txt</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/tree/TreePath.java</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/gui/Controller.java</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/joingraph/Path.java</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/grammar/MyListener.java</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/grammar/SQLite.g4</file>
+            <file>file:/D:/Dropbox/netbeans/GuardedSQL/src/guardedsql/tree/PatternTree.java</file>
         </group>
     </open-files>
 </project-private>

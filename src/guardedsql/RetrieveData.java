@@ -34,6 +34,7 @@ public class RetrieveData {
         }
     }
 
+
     public void setParser(SQLiteParser parser) {
         this.parser = parser;
         parser.outer_guard_clause(db);
@@ -54,7 +55,6 @@ public class RetrieveData {
                     }
                     List<String> colTables = columnLookup.get(col);
                     colTables.add(table);
-                    //System.out.println("Adding column " + col + " " + table);
                 }
             }
             List<ForeignKey> fks = db.getForeignKeys();
