@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="targets" default="run parser" basedir=".">
+    <target name="run parser" description="run parser">
+        <java classname="main.Main">
+            <classpath>
+                <pathelement location="out/artifacts/GuardedSQL_jar/GuardedSQL.jar"/>
+                <pathelement location="lib/antlr-4.7.1-complete.jar"/>
+            </classpath>
+            <arg value="test/Test1.sql"/>
+        </java>
+
+    </target>
+</project>

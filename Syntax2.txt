@@ -1,0 +1,34 @@
+SELECT distinct b.yearId as Year, m.nameFirst as "First Name", m.nameLast as "Last Name",
+mHR as "Home Runs"
+FROM `master` m, batting b,
+(SELECT yearId, max(HR) as mHR
+FROM batting
+GROUP BY yearId
+) x
+WHERE m.masterId = b.masterId AND b.HR = x.mHR AND b.yearID = x.yearId
+ORDER BY Year
+
+
+GUARD
+  batting {
+    yearid
+    HR
+  }
+SELCT Max(HR) as mHR, yearid
+GROUP BY yearid;
+GUARD
+  master [
+    nameFirst
+    nameLast
+    batting [
+     yearid
+     HR
+    ]
+    maxhr [
+     yearid
+     mHR
+    ]
+  ]
+SELECT distinct yearId as Year, nameFirst as "First Name", nameLast as "Last Name", mHR as "Home Runs",
+WHERE maxhr.yearid = batting.yearid AND mHR = HR   
+ORDER BY Year

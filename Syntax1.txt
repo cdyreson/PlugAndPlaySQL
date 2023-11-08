@@ -1,0 +1,29 @@
+GUARD
+   sciname { tid, collid }
+SELECT sciname, tid, collid
+WHERE true
+
+SELECT
+    DISTINCT m.nameFirst, m.nameLast
+FROM
+    `master` m,
+    pitching a,
+    teams t
+WHERE
+    m.masterId = a.masterId
+        AND t.teamId = a.teamId
+        AND t.lgID = a.lgID
+        AND t.name like '%Montreal Expos%'
+        AND t.yearID = a.yearId
+
+
+GUARD
+  master
+    [ nameFirst
+      nameLast
+      pitching
+        [ teams.name
+        ] 
+    ]
+SELECT DISTINCT nameFirst, nameLast
+WHERE name like '%Montreal Expos%'
