@@ -163,13 +163,37 @@ public class SQLiteBaseListener implements SQLiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGuard_clause(SQLiteParser.Guard_clauseContext ctx) { }
+	@Override public void enterGuard_obj(SQLiteParser.Guard_objContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGuard_clause(SQLiteParser.Guard_clauseContext ctx) { }
+	@Override public void exitGuard_obj(SQLiteParser.Guard_objContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGuard_pair(SQLiteParser.Guard_pairContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGuard_pair(SQLiteParser.Guard_pairContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGuard_join_type(SQLiteParser.Guard_join_typeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGuard_join_type(SQLiteParser.Guard_join_typeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

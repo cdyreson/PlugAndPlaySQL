@@ -139,12 +139,26 @@ expr
  ;
 
 outer_guard_clause[DB db]
-:K_GUARD guard_clause
+: K_GUARD guard_join_type? guard_obj
 ;
 
+guard_obj
+:  opening_brace guard_pair (guard_comma guard_pair)* closing_brace
+;
+
+guard_pair
+    : guard_key_name guard_join_type? guard_obj?
+    ;
+
+/*
 guard_clause
 :  (guard_key_name ((opening_brace guard_clause closing_brace) | (guard_comma guard_clause))? )+
 ;
+*/
+
+guard_join_type
+    : '?' | '!'
+    ;
 
 guard_comma
     : COMMA

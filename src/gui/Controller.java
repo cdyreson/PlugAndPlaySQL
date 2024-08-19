@@ -1,5 +1,6 @@
 package gui;
 
+import guardedsql.Globals;
 import guardedsql.RetrieveData;
 import guardedsql.database.DB;
 import guardedsql.grammar.MyListener;
@@ -80,7 +81,7 @@ public class Controller {
         String dbName = dbname.getText();
         String uName = dbuser.getText();
         String dbPassword = dbpass.getText();
-        System.out.println(url + " " + dbName + " " + uName + " " + dbPassword);
+        if (Globals.verbose) System.out.println(url + " " + dbName + " " + uName + " " + dbPassword);
         DB.setJdbcUrl(url);
         DB.setUserName(uName);
         DB.setPassword(dbPassword);
@@ -115,7 +116,7 @@ public class Controller {
                     if (db == null) db = DB.getInstance();
                 }
                 String guardClause = guardField.getText();
-                System.out.println(" doing " + guardField.getText());
+                System.out.println("Parsing " + guardField.getText());
                 CharStream charStream = CharStreams.fromString(guardClause);
                 SQLiteLexer lexer = new SQLiteLexer(charStream);
                 lexer.removeErrorListeners();
@@ -126,14 +127,13 @@ public class Controller {
                 parser.addErrorListener(ThrowingErrorListener.INSTANCE);
                 ParserRuleContext tree = parser.parse();
                 MyListener extractor = new MyListener(parser);
-                System.out.println(" Walking ");
+                System.out.println("Walking parse tree.");
                 ParseTreeWalker.DEFAULT.walk(extractor, tree);
-                System.out.println(" Walked ");
-                System.out.println(" Retrieving ");
-                retrieveData.setParser(parser);
-                System.out.println(" Parsing ");
+                System.out.println("Generating queries");
+                //retrieveData.setParser(parser);
+                //System.out.println(" Parsing ");
                 retrieveData.retrieveData();
-                System.out.println(" fff ");
+                System.out.println("Showing queries.");
                 showGeneratedQueries();
             } catch (ParseCancellationException e) {
                 // Ignore the EOF error

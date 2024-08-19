@@ -5,6 +5,7 @@
  */
 package guardedsql.database;
 
+import guardedsql.Globals;
 import java.sql.*;
 import java.util.*;
 // import org.postgresql.util.PSQLException;
@@ -30,7 +31,8 @@ public class DB {
     Map<String, Set<String>> fkColumns;
     Map<String, Integer> tableSizes;
     List<Table> tableInfo;
-    Boolean verbose = false;
+    Boolean verbose = Globals.verbose;
+    Boolean dbIsNull = true;
 
     public static void setDatabaseName(String databaseName) {
         DB.databaseName = databaseName;
@@ -52,30 +54,41 @@ public class DB {
         
 
         try {
-            this.conn = DriverManager.getConnection(jdbcUrl + databaseName, userName, password);
-            metadata = conn.getMetaData();
-            tableSet = new HashSet();
-            List<String> tables = this.getTableNames();
-            tableSet.addAll(tables);
-            countRows();
-            buildFKs();
-            estimateFKCompleteness();
-            columnLookup = new HashMap();
-            for (String table : tables) {
-                List<String> names = this.getColumnNames(table);
-                for (String col : names) {
-                    if (fkColumns.containsKey(table)) {
-                        if (fkColumns.get(table).contains(col)) {
-                            continue;
+            if (verbose) {
+                System.out.println("connection string (approx) is " + jdbcUrl + "/" + databaseName + "/" + userName + "/" +  password);
+            }
+            if (jdbcUrl != null) {
+                this.dbIsNull = false;
+                this.conn = DriverManager.getConnection(jdbcUrl + databaseName, userName, password);
+                metadata = conn.getMetaData();
+                tableSet = new HashSet();
+                List<String> tables = this.getTableNames();
+                tableSet.addAll(tables);
+                countRows();
+                buildFKs();
+                estimateFKCompleteness();
+                columnLookup = new HashMap();
+                for (String table : tables) {
+                    List<String> names = this.getColumnNames(table);
+                    for (String col : names) {
+                        if (fkColumns.containsKey(table)) {
+                            if (fkColumns.get(table).contains(col)) {
+                                continue;
+                            }
                         }
-                    }
-                    if (!columnLookup.containsKey(col)) {
-                        columnLookup.put(col, new HashSet());
-                    }
-                    Set<String> colTables = columnLookup.get(col);
-                    colTables.add(table);
+                        if (!columnLookup.containsKey(col)) {
+                            columnLookup.put(col, new HashSet());
+                        }
+                        Set<String> colTables = columnLookup.get(col);
+                        colTables.add(table);
+                        //System.out.println("Adding column '" + col + "'");
 
+                    }
                 }
+                if (verbose) {
+                    System.out.println("database opened");
+                }
+
             }
         } catch (SQLException e) {
             System.err.println("There was an error getting the metadata: " + e.getMessage());
@@ -87,7 +100,6 @@ public class DB {
 
     public static void setJdbcUrl(String url) {
         jdbcUrl = url;
-        // System.out.println("URL set to " + url);
     }
 
 
@@ -100,9 +112,15 @@ public class DB {
     }
 
     public List<String> getTableNames() throws SQLException {
+        if (verbose) {
+                    System.out.println("Getting table names " + this.dbIsNull);
+        }
+        if (this.dbIsNull) {
+            return new ArrayList<>();
+        }
         tableInfo = new ArrayList<>();
         String[] table = {"TABLE"};
-        List tables = null;
+        List<String> tables = null;
         rs = metadata.getTables(null, null, null, table);
         tables = new ArrayList();
         while (rs.next()) {
@@ -114,11 +132,26 @@ public class DB {
                     rs.getString("TABLE_NAME")
             ));
         }
+        if (verbose) {
+            //System.out.println("Tables names are ");
+            //for (String t: tables) {
+            //    System.out.println("  " + t);
+            //}
+        }
         return tables;
     }
     
     public void countRows() {
+        if (verbose) {
+            System.out.println("DB: Counting rows " + this.dbIsNull);
+        }
+        if (this.dbIsNull) {
+            return;
+        }
         this.tableSizes = new HashMap();
+        if (verbose) {
+            System.out.println("DB: table numbers " + this.tableSet.size());
+        }
         for (String table: this.tableSet) {
             try {
                 String query = "SELECT count(*) FROM " + table;
@@ -128,7 +161,6 @@ public class DB {
                     size = rs.getInt(1);
                 }
                 tableSizes.put(table, size);
-                //System.out.println("Table " + table + " has " + size);
             } catch (Exception e) {
                 System.err.println("There was an error in counting table query: " +  e.getMessage());
                 e.printStackTrace();             
@@ -146,10 +178,16 @@ public class DB {
     }
 
     public boolean tableIsEmpty(String s) {
+        if (this.dbIsNull) {
+            return true;
+        }
         return tableSizes.get(s) == 0;
     }
     
     public void estimateFKCompleteness() {
+        if (this.dbIsNull) {
+            return;
+        }
         for (ForeignKey fk : this.fks) {
             try {
                 String fromColumns = joinString(fk.fromColumns);
@@ -195,10 +233,16 @@ public class DB {
     }
         
     public List<ForeignKey> getForeignKeys() {
+        if (this.dbIsNull) {
+            return new ArrayList<>();
+        }
         return fks;
     }
 
     public Set<String> stringLookup(String key) {
+        if (this.dbIsNull) {
+            return new HashSet<>();
+        }
         Set<String> result = columnLookup(key);
         if (result.isEmpty()) {
             result.add(tableLookup(key));
@@ -207,6 +251,9 @@ public class DB {
     }
 
     public String tableLookup(String key) {
+        if (this.dbIsNull) {
+            return key;
+        }
         if (tableSet.contains(key)) {
             return key;
         }
@@ -215,8 +262,15 @@ public class DB {
     }
 
     public Set<String> columnLookup(String key) {
+        if (this.dbIsNull) {
+            return new HashSet<>();
+        }
+        key = key.toLowerCase();
+        //System.out.println("Looking up column " + key + " " + columnLookup.keySet());
         if (verbose) System.out.println("Inside column lookup");
+
         if (columnLookup.containsKey(key)) {
+            //System.out.println("Found column " + key);
             return columnLookup.get(key);
         } else {
             System.err.println("table not found in columnLookup: " + key);
@@ -225,12 +279,18 @@ public class DB {
     }
 
     public ResultSet executeQuery(String query) throws SQLException {
+        if (this.dbIsNull) {
+            return null;
+        }
         stmt = conn.createStatement();
         rs = stmt.executeQuery(query);
         return rs;
     }
 
     public ResultSet executeQuery(String query, int timeOut) throws SQLException {
+        if (this.dbIsNull) {
+            return null;
+        }
         stmt = conn.createStatement();
         stmt.setQueryTimeout(timeOut);
         rs = stmt.executeQuery(query);
@@ -238,6 +298,9 @@ public class DB {
     }
 
     public List<ForeignKey> buildFKs() throws SQLException {
+        if (this.dbIsNull) {
+            return new ArrayList<>();
+        }
         fks = new ArrayList(10);
         Map<String, ForeignKey> keyMap = new HashMap();
         fkColumns = new HashMap();
@@ -303,6 +366,9 @@ public class DB {
     }
 
     public List<String> getColumnNames(String table) throws SQLException {
+        if (this.dbIsNull) {
+            return new ArrayList<>();
+        }
         List<String> names = new ArrayList();
         rs = metadata.getColumns(null, null, table, null);
         while (rs.next()) {
@@ -312,6 +378,9 @@ public class DB {
     }
 
     public String getPrimaryKey(String table) {
+        if (this.dbIsNull) {
+            return "";
+        }
         String query = "SELECT c.column_name, c.data_type\n" +
                 "FROM information_schema.table_constraints tc \n" +
                 "JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name) \n" +

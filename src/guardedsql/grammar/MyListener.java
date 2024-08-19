@@ -5,6 +5,7 @@
  */
 package guardedsql.grammar;
 
+import guardedsql.Globals;
 import guardedsql.database.DB;
 // import guardedsql.database.ForeignKey;
 import guardedsql.joingraph.Graph;
@@ -23,7 +24,7 @@ import org.antlr.v4.runtime.misc.Interval;
  */
 public class MyListener extends SQLiteBaseListener {
 
-    Boolean verbose = false;
+    Boolean verbose = Globals.verbose;
     // SQLiteParser parser;
     String selectClause;
 
@@ -132,11 +133,11 @@ public class MyListener extends SQLiteBaseListener {
     @Override
     public void exitGuard_key_name(SQLiteParser.Guard_key_nameContext ctx) {
         if (ctx.column_name() != null) {
-            System.out.println("Ctx expr " + ctx.getText());
+            if (Globals.verbose) System.out.println("Ctx expr " + ctx.getText());
         } else if (ctx.table_name() != null) {
-            System.out.println("table name+ " + ctx.table_name().getText());
+            if (Globals.verbose) System.out.println("table name+ " + ctx.table_name().getText());
         } else {
-            System.out.println("null");
+            if (Globals.verbose) System.out.println("null");
         }
     }
         
@@ -164,7 +165,7 @@ public class MyListener extends SQLiteBaseListener {
     
     @Override
     public void exitExpr(SQLiteParser.ExprContext ctx) {
-        System.out.println("EXPR is " + getRawText(ctx));
+        if (Globals.verbose) System.out.println("EXPR is " + getRawText(ctx));
 
         if (verbose) {
             System.out.println("exit expression " + ctx.getText());
@@ -235,11 +236,11 @@ public class MyListener extends SQLiteBaseListener {
     @Override
     public void exitResult_column(SQLiteParser.Result_columnContext ctx) {
         if (ctx.expr() != null) {
-            System.out.println("Ctx expr " + ctx.expr().getText());
+            if (Globals.verbose) System.out.println("Ctx expr " + ctx.expr().getText());
         } else if (ctx.table_name() != null) {
-            System.out.println("table name+ " + ctx.table_name().getText());
+            if (Globals.verbose) System.out.println("table name+ " + ctx.table_name().getText());
         } else {
-            System.out.println("null");
+            if (Globals.verbose) System.out.println("null");
         }
     }
 
@@ -257,6 +258,11 @@ public class MyListener extends SQLiteBaseListener {
         }
         // System.out.println("New pattern tree");
         tree = new PatternTree(db);
+        if (ctx.guard_join_type() != null) {
+            if (ctx.guard_join_type().getText().equals("!")) {
+            tree.setInnerJoin();
+            }
+        }
         // treeStack.push(tree);
         tree.setRemainingQuery(selectClause);
         joinGraph = new Graph(db);
@@ -269,9 +275,9 @@ public class MyListener extends SQLiteBaseListener {
         }
         //try {
             while (!treeStack.isEmpty()) {
-                System.out.println(" TTT " + tree.getLabel() + " ");
+                if (Globals.verbose) System.out.println(" TTT " + tree.getLabel() + " ");
                 tree = treeStack.pop();
-                System.out.println(" TTV " + tree.getLabel() + " ");
+                if (Globals.verbose) System.out.println(" TTV " + tree.getLabel() + " ");
             }
             //finalRoutes = tree.figureTreePaths(joinGraph);
         //} catch (IOException | SQLException e) {
@@ -280,16 +286,17 @@ public class MyListener extends SQLiteBaseListener {
     }
 
     @Override
-    public void enterGuard_clause(SQLiteParser.Guard_clauseContext ctx) {
+    public void enterGuard_obj(SQLiteParser.Guard_objContext ctx) {
         if (verbose) {
-            System.out.println("Enter guard clause " + ctx.getText());
+            System.out.println("Enter guard obj " + ctx.getText());
         }
         int numberOfChild = ctx.getChildCount();
         for (int i = 0; i < numberOfChild; i++) {
-            if (verbose) {
-                System.out.println("Processing child " + i + " " + ctx.guard_key_name(i));
-            }
-            if (ctx.guard_key_name(i) != null) {
+            if (ctx.guard_pair(i) != null) {
+                if (verbose) {
+                    System.out.println("Processing child guard pair " + i + " " + ctx.guard_pair(i).getText());
+                }
+                /*
                 String columnName = ctx.guard_key_name(i).column_name().getText();
                 String tableName = null;
                 if (ctx.guard_key_name(i).table_name() != null ) {
@@ -334,18 +341,20 @@ public class MyListener extends SQLiteBaseListener {
                     treeStack.push(tree);
                     tree = child;
                 }
+*/
             }
 
         }
     }
-
+    
     @Override
-    public void exitGuard_clause(SQLiteParser.Guard_clauseContext ctx) {
+    public void exitGuard_obj(SQLiteParser.Guard_objContext ctx) {
         if (verbose) {
-            System.out.println("Exit guard clause " + ctx.getText());
+            System.out.println("Exit guard obj " + ctx.getText());
         }
         int numberOfChild = ctx.getChildCount();
         for (int i = 0; i < numberOfChild; i++) {
+/*
             if (ctx.guard_key_name(i) != null) {
                 String tableName = ctx.guard_key_name(i).toStringTree();
                 tableName = tableName.replaceAll("[^a-zA-Z]", "");
@@ -357,6 +366,97 @@ public class MyListener extends SQLiteBaseListener {
                     // tree.buildPotentialLabels(tableName);
                 }
             }
+*/
+        }
+        tree = treeStack.pop();
+    }
+
+    @Override
+    public void enterGuard_pair(SQLiteParser.Guard_pairContext ctx) {
+        if (verbose) {
+            System.out.println("Enter guard pair " + ctx.getText());
+        }
+
+        if (verbose) {
+            System.out.println("Processing key name " + ctx.guard_key_name().getText());
+        }
+        if (ctx.guard_key_name() != null) {
+            String columnName = ctx.guard_key_name().column_name().getText();
+            String tableName = null;
+            if (ctx.guard_key_name().table_name() != null) {
+                tableName = ctx.guard_key_name().table_name().getText();
+            }
+            // String tableName = ctx.guard_key_name(i).toStringTree();
+            // tableName = tableName.replaceAll("[^a-zA-Z]", "");
+            if (verbose) {
+                System.out.println("Table name is " + tableName);
+            }
+            if (verbose) {
+                System.out.println("Column name is " + columnName);
+            }
+            if (treeStack.isEmpty()) {
+                if (verbose) {
+                    System.out.println("Tree stack is empty ");
+                }
+                treeStack.push(tree);
+                if (Globals.verbose) System.out.println(" TT Parent is " + tree.getLabel() + " " + columnName);
+                PatternTree child = new PatternTree(db, tree, columnName, tableName);
+                if (tableName == null) {
+                    child.buildPotentialLabels(columnName);
+                }
+                if (ctx.guard_join_type() != null) {
+                    if (ctx.guard_join_type().getText().equals("!")) {
+                        tree.setInnerJoin();
+                    }
+                }
+                tree.addChild(child);
+                tree = child;
+                treeStack.push(tree);
+                // treeStack.push(child);
+                // tree = child;
+            } else {
+                if (verbose) {
+                    System.out.println("Tree stack is not empty ");
+                }
+                // tree = treeStack.peek();
+                PatternTree child;
+                if (tableName != null) {
+                    if (Globals.verbose) System.out.println(" YY Parent is " + tree.getLabel() + " " + columnName);
+                    child = new PatternTree(db, tree, columnName, tableName);
+                } else {
+                    if (Globals.verbose) System.out.println(" ZZ Parent is " + tree.getLabel() + " " + columnName);
+                    child = new PatternTree(db, tree, columnName);
+                    child.buildPotentialLabels(columnName);
+                }
+                if (ctx.guard_join_type() != null) {
+                    if (ctx.guard_join_type().getText().equals("!")) {
+                        child.setInnerJoin();
+                    }
+                }
+                tree.addChild(child);
+                treeStack.push(tree);
+                tree = child;
+            }
+ 
+        }
+    }
+
+    @Override
+    public void exitGuard_pair(SQLiteParser.Guard_pairContext ctx) {
+        if (verbose) {
+            System.out.println("Exit guard obj " + ctx.getText());
+        }
+
+        if (ctx.guard_key_name() != null) {
+            String tableName = ctx.guard_key_name().toStringTree();
+            tableName = tableName.replaceAll("[^a-zA-Z]", "");
+            if (verbose) {
+                System.out.println("Building tree " + tableName);
+            }
+            if (!treeStack.isEmpty()) {
+                // tree = treeStack.pop();
+                // tree.buildPotentialLabels(tableName);
+            }
         }
     }
 
@@ -367,7 +467,7 @@ public class MyListener extends SQLiteBaseListener {
 
     @Override
     public void exitOpening_brace(SQLiteParser.Opening_braceContext ctx) {
-        tree = treeStack.pop();
+        //tree = treeStack.pop();
     }
     
     @Override

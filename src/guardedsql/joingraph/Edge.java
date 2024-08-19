@@ -17,6 +17,7 @@ public class  Edge {
     String fromTable;
     String toTable;
     int cost;
+    Boolean isOuterJion = true;
 
     public Edge(ForeignKey fk) {
         cost = 1;

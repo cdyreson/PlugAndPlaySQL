@@ -31,7 +31,9 @@ public class Graph {
             List<String> tables = db.getTableNames();
             for (String s : tables) this.addTable(s);
             List<ForeignKey> fks = db.getForeignKeys();
-            for (ForeignKey fk : fks) this.addFK(fk);
+            if (fks != null) {
+                 for (ForeignKey fk : fks) this.addFK(fk);
+            }
             this.computeShortestPaths();
         } catch (SQLException e) {
             System.err.println("There was an error getting the metadata: "

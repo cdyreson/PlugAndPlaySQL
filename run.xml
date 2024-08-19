@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="targets" default="Plug-and-play SQL" basedir=".">
+    <target name="run inference on query file Q1.sql" description="run query file Q1.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q1.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+    <target name="run inference on query file Q2.sql" description="run query file Q2.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q2.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+    <target name="run inference on query file Q3.sql" description="run query file Q3.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q3.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+    <target name="run inference on query file Q4.sql" description="run query file Q4.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q4.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+    <target name="run inference on query file Q5.sql" description="run query file Q5.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q5.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+    <target name="run inference on query file Q6.sql" description="run query file Q6.sql">
+        <java classname="guardedsql.main.InferenceMain">
+            <classpath>
+                <pathelement location="dist/GuardedSQL.jar"/>
+            </classpath>
+            <arg value="test/Q6.sql"/>
+            <arg value="test/dbconfig.txt"/>
+        </java>
+    </target>
+</project>

@@ -5,6 +5,4 @@
             <arg value="SQLite.g4"/>
         </java>
     </target>
-
-
 </project>

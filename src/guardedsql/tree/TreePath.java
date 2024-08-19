@@ -1,5 +1,6 @@
 package guardedsql.tree;
 
+import guardedsql.Globals;
 import guardedsql.database.ForeignKey;
 import guardedsql.joingraph.Edge;
 import guardedsql.joingraph.Path;
@@ -15,9 +16,10 @@ public class TreePath {
     List<String> tables;
     List<String> columns;
     Set<Path> paths;
+    List<Boolean> isOuterJoin;
     
-    public TreePath(String table, String column, Set<ForeignKey> fk, Path path) {
-        System.out.println("TreePath: " + table + "." + column);
+    public TreePath(String table, String column, Set<ForeignKey> fk, Path path, boolean isJoinOuter) {
+        if (Globals.verbose) System.out.println("TreePath: " + table + "." + column + " " + isJoinOuter);
         fks = fk;
         tables = new ArrayList();
         tables.add(table);
@@ -25,14 +27,17 @@ public class TreePath {
         columns.add(column);
         this.paths = new HashSet();
         paths.add(path);
+        this.isOuterJoin = new ArrayList();
+        this.isOuterJoin.add(isJoinOuter);
     }
     
-    public TreePath(List<String> tables, List<String> columns, Set<ForeignKey> fk, Set<Path> paths) {
-        System.out.println("TreePath: " + tables + "." + columns);
+    public TreePath(List<String> tables, List<String> columns, Set<ForeignKey> fk, Set<Path> paths, List<Boolean> isJoinOuter) {
+        if (Globals.verbose) System.out.println("TreePath: multi cols " + tables + "." + columns + " " + isJoinOuter);
         fks = fk;
         this.tables = tables;
         this.columns = columns;
         this.paths = paths;
+        this.isOuterJoin = isJoinOuter;
     }
     
     public double computeCompleteness() {
@@ -43,10 +48,11 @@ public class TreePath {
         return completeness;
     }
     
-    public void addTable(String table, String column) {
-        System.out.println("TreePath: addoing " + table + "." + column);
+    public void addTable(String table, String column, boolean isJoinOuter) {
+        if (Globals.verbose) System.out.println("TreePath: adding " + table + "." + column + " " + isJoinOuter);
         tables.add(table);
         columns.add(column);
+        isOuterJoin.add(isJoinOuter);
     }
     
     public String getFormattedColumns() {
@@ -69,6 +75,7 @@ public class TreePath {
         return s;
     }
     
+    /*
     public String getFormattedFKs() {
         String s = "";
         String prefix = "";
@@ -79,8 +86,10 @@ public class TreePath {
         }
         return s;
     }
+    */
     
     public String getFormattedPaths() {
+        if (Globals.verbose) System.out.println("TreePath: formatting paths");
         String s = tables.get(0);
         Set<String> tablesSoFar = new HashSet();
         String prefix = "";
@@ -90,6 +99,7 @@ public class TreePath {
             tablesSoFar.add(s);
         } else {
             for (Path path : paths) {
+                if (Globals.verbose) System.out.println("TreePath: got a path to format");
                 List<Edge> edges = path.getEdges();
                 for (int i = 0; i < edges.size(); i++) {
                     Edge e = edges.get(i);
@@ -102,7 +112,12 @@ public class TreePath {
                         s = e.getFromTable();
                         tablesSoFar.add(e.getFromTable());
                     } 
-                    s = s + "\n   LEFT OUTER JOIN " + e.getToTable()
+                    if (Globals.verbose) System.out.println("TreePath: kind of join " + this.columns + " " + this.isOuterJoin);
+                    String joinSyntax = "INNER JOIN";
+                    if (this.isOuterJoin.get(i)) {
+                        joinSyntax = "LFT OUTER JOIN";
+                    }
+                    s = s + "\n   " + joinSyntax + " " + e.getToTable()
                             + " ON (" + fk.generateJoinCondition() + ")";
                 }
             }

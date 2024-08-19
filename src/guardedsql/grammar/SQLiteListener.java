@@ -131,15 +131,35 @@ public interface SQLiteListener extends ParseTreeListener {
 	 */
 	void exitOuter_guard_clause(SQLiteParser.Outer_guard_clauseContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link SQLiteParser#guard_clause}.
+	 * Enter a parse tree produced by {@link SQLiteParser#guard_obj}.
 	 * @param ctx the parse tree
 	 */
-	void enterGuard_clause(SQLiteParser.Guard_clauseContext ctx);
+	void enterGuard_obj(SQLiteParser.Guard_objContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link SQLiteParser#guard_clause}.
+	 * Exit a parse tree produced by {@link SQLiteParser#guard_obj}.
 	 * @param ctx the parse tree
 	 */
-	void exitGuard_clause(SQLiteParser.Guard_clauseContext ctx);
+	void exitGuard_obj(SQLiteParser.Guard_objContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SQLiteParser#guard_pair}.
+	 * @param ctx the parse tree
+	 */
+	void enterGuard_pair(SQLiteParser.Guard_pairContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SQLiteParser#guard_pair}.
+	 * @param ctx the parse tree
+	 */
+	void exitGuard_pair(SQLiteParser.Guard_pairContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SQLiteParser#guard_join_type}.
+	 * @param ctx the parse tree
+	 */
+	void enterGuard_join_type(SQLiteParser.Guard_join_typeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SQLiteParser#guard_join_type}.
+	 * @param ctx the parse tree
+	 */
+	void exitGuard_join_type(SQLiteParser.Guard_join_typeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link SQLiteParser#guard_comma}.
 	 * @param ctx the parse tree

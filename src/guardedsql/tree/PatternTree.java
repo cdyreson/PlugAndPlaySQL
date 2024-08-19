@@ -5,9 +5,10 @@
  */
 package guardedsql.tree;
 
+import guardedsql.Globals;
 import guardedsql.database.DB;
 import guardedsql.database.ForeignKey;
-import guardedsql.datapull.SQLPull;
+//import guardedsql.datapull.SQLPull;
 import guardedsql.grammar.MyListener;
 import guardedsql.joingraph.Graph;
 import guardedsql.joingraph.Path;
@@ -35,8 +36,9 @@ public class PatternTree {
     private static DB db;
     private String remainingQuery;
     private static String[] generatedQueries;
-    private boolean verbose = true;
+    private boolean verbose = Globals.verbose;
     boolean isRoot = false;
+    boolean isOuterJoin = true; // by default use outerjoins
     
     public PatternTree(DB db) {
         label = "root";
@@ -65,13 +67,25 @@ public class PatternTree {
         parent = p;
         PatternTree.db = db;
         table = t;
-        tables = new HashSet<String>();
+        tables = new HashSet();
         tables.add(t);
         children = new ArrayList();
     }
 
     public static String[] getGeneratedQueries() {
         return generatedQueries;
+    }
+    
+    public void setOuterJoin() {
+        isOuterJoin = true;
+    }
+    
+    public void setInnerJoin() {
+        isOuterJoin = false;
+    }
+    
+    public boolean isOuterJoin() {
+        return isOuterJoin;
     }
 
     public void setRemainingQuery(String remainingQuery) {
@@ -224,70 +238,46 @@ public class PatternTree {
 
     public List<TreePath> computeTreePaths(Graph joinGraph, String parentTable) throws IOException, SQLException {
         List<TreePath> allResults = new ArrayList();
-        System.out.println("LABEL IS " + label + " " + isRoot + " " + parentTable);
+        if (Globals.verbose) System.out.println("LABEL IS " + label + " " + isRoot + " " + parentTable + " " + this.isOuterJoin);
         if (isRoot) {
             if (verbose) System.out.println("PatternTree: computing tree path for root ");
             // Root has a single child go to it
             PatternTree child = children.get(0);
             allResults = child.computeTreePaths(joinGraph, null);
-            /*
-            if (child.tables != null) {
-                for (String table : child.tables) {
-                    System.out.println("root is " + table + "." + label);
-                    List<TreePath> results = child.computeTreePaths(joinGraph, table);
-                    allResults.addAll(results);
-                }
-            }
-            */
-        /* }  else if (parentTable == null) {
-            // This is the top child in the pattern
-            for (String myTable : tables) {
-                System.out.println("self is " + myTable + "." + label + " " + children.size());
-                for (PatternTree child : children) {
-                    List<TreePath> results = child.computeTreePaths(joinGraph, myTable);
-                    for (TreePath treePath : results) {
-                        treePath.addTable(myTable, label);
-                    }
-                    allResults.addAll(results);
-                }
-            }
-        */
         } else {
             // System.out.println(" HERE " + label + " " + this.tables );
             if (this.tables != null) {
                 for (String myTable : this.tables) {
                     // if (verbose) System.out.println("PatternTree: computing tree path for " + parentTable + " to " + myTable);
-                    List<Path> paths = null;
+                    List<Path> paths = new ArrayList();
                     // Only extend if a different table
                     if (parentTable != null && !myTable.equals(parentTable)) {
                         paths = joinGraph.getPaths(parentTable, myTable);
                         // if (verbose) System.out.println("Found paths " + paths);
-                    } else {
-                        paths = new ArrayList();
-                    }
+                    } 
                     // Only continue if we have paths
                     if (paths != null) {
                         if (children.isEmpty()) {
                             // This is a leaf, add to results
                             List<TreePath> results = new ArrayList();
                             if (myTable.equals(parentTable)) {
-                                results.add(new TreePath(myTable, this.label, new HashSet(), new Path()));
+                                results.add(new TreePath(myTable, this.label, new HashSet(), new Path(), isOuterJoin));
                             } else {
                                 for (Path path : paths) {
-                                    results.add(new TreePath(myTable, this.label, path.getAllFKs(), path));
+                                    results.add(new TreePath(myTable, this.label, path.getAllFKs(), path, isOuterJoin));
                                 }
                             }
 
                             allResults.addAll(results);
                         } else {
                             // Build up the union of all of the children
-                            System.out.println(" UNIONON THE CHILDREN " + 
+                            if (Globals.verbose) System.out.println(" UNIONON THE CHILDREN " + 
                                     children.size() + " " + label + " myTable " + myTable);
                             List<TreePath> newResults = new ArrayList();
                             boolean isFirstChild = true;
                             for (PatternTree child : children) {
                                 if (verbose) {
-                                    System.out.println("Child tables are " + child.tables);
+                                    System.out.println("PatternTree: Child tables are " + child.tables);
                                 }
                                 // Get all of the children sets of foreign keys
                                 // System.out.println(" Children of " + myTable + ' ' + child.getLabel());
@@ -298,7 +288,7 @@ public class PatternTree {
                                     isFirstChild = false;
                                 } else {
                                     // Union this child with the next child
-                                    System.out.println("Doing union " + newResults.size() + " " + childResults.size());
+                                    System.out.println("PatternTree: Doing union " + newResults.size() + " " + childResults.size());
                                     List<TreePath> tempResults = new ArrayList();
                                     for (TreePath newResult : newResults) {
                                         for (TreePath childResult : childResults) {
@@ -308,6 +298,8 @@ public class PatternTree {
                                             newFKs.addAll(childResult.fks);
                                             List<String> newTables = new ArrayList();
                                             List<String> newColumns = new ArrayList();
+                                            List<Boolean> isOuterJoins = new ArrayList();
+                                            isOuterJoins.addAll(newResult.isOuterJoin);
                                             newTables.addAll(newResult.tables);
                                             newTables.addAll(childResult.tables);
                                             newColumns.addAll(newResult.columns);
@@ -317,20 +309,20 @@ public class PatternTree {
                                             Set<Path> newPaths = new HashSet();
                                             newPaths.addAll(newResult.paths);
                                             newPaths.addAll(childResult.paths);
-                                            tempResults.add(new TreePath(newTables, newColumns, newFKs, newPaths));
+                                            tempResults.add(new TreePath(newTables, newColumns, newFKs, newPaths, isOuterJoins));
                                         }
                                     }
                                     newResults = tempResults;
                                 }
                             }
-                            System.out.println(" new results size is " + newResults.size());
+                            if (Globals.verbose) System.out.println(" new results size is " + newResults.size());
                             for (TreePath newResult : newResults) {
-                                newResult.addTable(myTable, label);
+                                newResult.addTable(myTable, label, isOuterJoin);
                                 if (myTable.equals(parentTable)) {
                                     // No new path to extend
-                                    System.out.println(" NO NEW TABLE " + myTable);
+                                    if (Globals.verbose) System.out.println(" NO NEW TABLE " + myTable);
                                 } else {
-                                    System.out.println(" NEW TABLE " + myTable + paths.size());
+                                    if (Globals.verbose) System.out.println(" NEW TABLE " + myTable + paths.size());
                                     for (Path path : paths) {
                                         newResult.fks.addAll(path.getAllFKs());
                                     }
@@ -345,232 +337,6 @@ public class PatternTree {
         if (verbose) System.out.println("PatternTree: result size is " + allResults.size());
         return allResults;
         }
-
-    public List<Set<ForeignKey>> computeTreePaths3(Graph joinGraph, String parentTable) throws IOException, SQLException {
-        // Set<ForeignKey> result = new HashSet();
-        List<Set<ForeignKey>> allResults = new ArrayList();
-        if (isRoot) {
-            if (verbose) System.out.println("PatternTree: computing tree path for root ");
-            // Root has a single child go to it
-            PatternTree child = children.get(0);
-            if (child.tables != null) {
-                for (String table : child.tables) {
-                    List<Set<ForeignKey>> results = child.computeTreePaths3(joinGraph, table);
-                    allResults.addAll(results);
-                }
-            }
-        } else {
-            if (this.tables != null) {
-                for (String childTable : this.tables) {
-                    if (verbose) System.out.println("PatternTree: computing tree path for " + parentTable + " to " + childTable);
-                    List<Path> paths = null;
-                    // Only extend if a different table
-                    if (!childTable.equals(parentTable)) {
-                        paths = joinGraph.getPaths(parentTable, childTable);
-                        if (verbose) System.out.println("Found paths " + paths);
-                    } else {
-                        paths = new ArrayList();
-                    }
-                    // Only continue if we have paths
-                    if (paths != null) {
-                        if (children.isEmpty()) {
-                            // This is a leaf, add to results
-                            List<Set<ForeignKey>> results = new ArrayList();
-                            for (Path path : paths) {
-                                results.add(path.getAllFKs());
-                            }
-                            allResults.addAll(results);
-                        } else {
-                            for (PatternTree child : children) {
-                                if (verbose) {
-                                    System.out.println("Child tables are " + child.tables);
-                                }
-                                // Get all of the children sets of foreign keys
-                                // List<Set<ForeignKey>> results = child.computeTreePaths(joinGraph, );
-                                List<Set<ForeignKey>> childResults = child.computeTreePaths3(joinGraph, childTable);
-
-                                List<Set<ForeignKey>> newResults = new ArrayList();
-                                for (Set<ForeignKey> result : childResults) {
-                                    Set<ForeignKey> newResult = new HashSet();
-                                    newResult.addAll(result);
-                                    if (childTable.equals(parentTable)) {
-                                        // No new path to extend
-                                    } else {
-                                        for (Path path : paths) {
-                                            newResult.addAll(path.getAllFKs());
-                                        }
-                                    }
-
-                                    newResults.add(newResult);
-                                }
-                                allResults.addAll(newResults);
-                            }
-                        }  
-                    }
-                }
-            }           
-        }
-        if (verbose) System.out.println("PatternTree: result size is " + allResults.size());
-        return allResults;
-        /*
-            // Next, navigate between children
-            if (children.size() > 1) {
-                PatternTree previousChild = null;
-                for (PatternTree child : children) {
-                    if (previousChild != null) {
-                        if (child.table != null) {
-                            if (!child.table.equals(previousChild.table)) {
-                                // Needs to be a different child
-                                List<Path> paths = joinGraph.getPaths(previousChild.table, child.table);
-                                System.out.println("Found sibling paths " + paths);
-                                if (paths != null) {
-                                    result.addAll(paths.get(0).getFKs());
-                                }
-                                previousChild = child;
-                            }
-                        }
-                    } else {
-                        previousChild = child;
-                    }
-                }
-            }
-        */
-        }
-
-    public void computeTreePaths2(Graph joinGraph) throws IOException, SQLException {
-        if (verbose) {
-            System.out.println("PatternTree: Computing tree paths ");
-        }
-        SQLPull sqlPull = new SQLPull();
-        HashMap<Integer, Set<ForeignKey>> allPaths = new HashMap<>();
-        HashMap<String, Integer> queryAndNumberRows = new HashMap<>();
-        boolean containsDuplicates = containsDuplicate();
-        List<ForeignKey> fks = db.getForeignKeys();
-        if (fks.isEmpty() || fks == null) {
-            fks = db.buildFKs();
-        }
-        
-        if (verbose) {
-            System.out.println("PatternTree: number of fks " + fks.size());
-        }
-
-        if (hasChildren()) {
-            PatternTree rootNode = getRoot();
-            allPaths = savePaths(joinGraph, rootNode, allPaths);
-            if (verbose) {
-                System.out.println("PatternTree: haschildren " + rootNode.children.size() + " allPaths " + allPaths.size());
-            }
-            if (rootNode.children.size() == 1 || allPaths.isEmpty()) {
-                String query = sqlPull.generateRowsEstimation(new HashSet<>(), listColumns().toString(), listTables());
-                if (verbose) {
-                    System.out.println("PatternTree: query " + query);
-                }
-                if (containsDuplicates) {
-                    String colJoin = "";
-                    boolean flag = true;
-                    String duplicateTableJoin = getDuplicateTableJoin();
-                    String table = Objects.requireNonNull(duplicateTableJoin).split("\\.")[0];
-                    List<String> list = new ArrayList<>(listColumns());
-                    Set<ForeignKey> set = new HashSet<>();
-                    if (verbose) {
-                        System.out.println("PatternTree: has duplicates " + fks.size());
-                    }
-                    for (ForeignKey fk : fks) {
-                        if (fk.getFromTable().equals(table)) {
-                            if (flag) {
-                                flag = false;
-                                colJoin = db.getPrimaryKey(fk.getToTable());
-                                set.add(fk);
-                                if (fk.generateJoinCondition().split(" = ")[0].split("\\.")[0].equals(fk.getToTable()))
-                                    list.add(fk.generateJoinCondition().split(" = ")[0].split("\\.")[0] + ".\"" + colJoin + "\"");
-                                else
-                                    list.add(fk.generateJoinCondition().split(" = ")[1].split("\\.")[0] + ".\"" + colJoin + "\"");
-                            }
-                        }
-                    }
-                    if (fks.size() == 0 || colJoin.equals(""))
-                        colJoin = nonDuplicateColumn();
-
-                    String tempQuery = sqlPull.generateQuery(set, new HashSet<>(list).toString(), listTables());
-                    query = sqlPull.changeQueryToAddSecondTable(tempQuery, listColumns(), colJoin);
-                    queryAndNumberRows.put(query + "!!!" + listColumns().get(0), getRowsNumberFromOutput("EXPLAIN " + query));
-                } else {
-                    queryAndNumberRows.put(query.split("EXPLAIN ")[1] + "!!!" + listTables().get(0),
-                            getRowsNumberFromOutput(query));
-                }
-            }
-        }
-
-        if (verbose) {
-            System.out.println("PatternTree: allpaths " + allPaths.size());
-        }
-        String queryOrderBy = "";
-        boolean flag = true;
-        for (Integer i : allPaths.keySet()) {
-            Set<ForeignKey> set = new HashSet<>(allPaths.get(i));
-            String addPath = sqlPull.createAddPaths(new ArrayList<>(allPaths.get(i)));
-            String query = sqlPull.generateRowsEstimation(set, listColumns().toString(), listTables());
-            if (containsDuplicates) {
-                String colJoin = null;
-                String duplicateTableJoin = getDuplicateTableJoin();
-                String table = Objects.requireNonNull(duplicateTableJoin).split("\\.")[0];
-                List<String> tempCol = listColumns();
-                boolean flagDuplicate = true;
-                for (ForeignKey fk : fks) {
-                    if (fk.getFromTable().equals(table)) {
-                        if (fk.getToTable().equals(table)) {
-                            String firstCol = fk.generateJoinCondition().split(" = ")[0].replaceAll(" ", "");
-                            String secondCol = fk.generateJoinCondition().split(" = ")[1].replaceAll(" ", "");
-                            tempCol.add(firstCol);
-                            tempCol.add(secondCol);
-                            Set<String> strings = new HashSet<>(listColumns());
-                            flagDuplicate = false;
-                            if (strings.add(firstCol))
-                                colJoin = firstCol.split("\\.")[1].replaceAll("\"", "");
-                            else colJoin = secondCol.split("\\.")[1].replaceAll("\"", "");
-                        }
-                    }
-                }
-                if (flagDuplicate) {
-                    for (ForeignKey fk : fks) {
-                        if (fk.getFromTable().equals(table)) {
-                            set.add(fk);
-                            String firstCol = fk.generateJoinCondition().split(" = ")[0].replaceAll(" ", "");
-                            String secondCol = fk.generateJoinCondition().split(" = ")[1].replaceAll(" ", "");
-                            Set<String> strings = new HashSet<>();
-                            for (String s : listColumns()) {
-                                strings.add(s.split("\\.")[1]);
-                            }
-                            if (strings.add(firstCol.split("\\.")[1]))
-                                tempCol.add(firstCol);
-                            if (strings.add(secondCol.split("\\.")[1]))
-                                tempCol.add(secondCol);
-                            Set<String> strings1 = new HashSet<>(listColumns());
-                            if (strings1.add(firstCol))
-                                colJoin = firstCol.split("\\.")[1].replaceAll("\"", "");
-                            else colJoin = secondCol.split("\\.")[1].replaceAll("\"", "");
-                        }
-                    }
-                }
-                if (colJoin == null) {
-                    colJoin = nonDuplicateColumn();
-                }
-                String tempQuery = sqlPull.generateQuery(set, new HashSet<>(tempCol).toString(), listTables());
-                query = sqlPull.changeQueryToAddSecondTable(tempQuery, listColumns(), colJoin);
-                queryAndNumberRows.put(query + "!!!" + addPath, getRowsNumberFromOutput("EXPLAIN " + query));
-            } else {
-                if (flag) {
-                    queryOrderBy = query.split("EXPLAIN ")[1].split("ORDER BY")[1];
-                    flag = false;
-                }
-                queryAndNumberRows.put(query.split("EXPLAIN ")[1] + "!!!" + addPath,
-                        getRowsNumberFromOutput(query));
-            }
-        }
-        HashMap<String, Integer> temp = sortByValue(queryAndNumberRows);
-        String queryList = sqlPull.writeToFile(queryOrderBy, temp, allPaths);
-        showqueries(queryList);
-    }
 
     public void generateQueries(List<TreePath> paths) {
         generatedQueries = new String[paths.size()];
