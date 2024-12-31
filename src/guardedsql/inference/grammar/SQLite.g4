@@ -182,8 +182,13 @@ table_or_subquery
  ;
 
 join_clause
- : op1=table_or_subquery ( op=join_operator op2=table_or_subquery constraints=join_constraint )*
+// : op1=table_or_subquery ( op=join_operator op2=table_or_subquery constraints=join_constraint )*
+ : op1=table_or_subquery op=join_operator op2=table_or_subquery constraints=join_constraint join_keep_going?
  ;
+
+join_keep_going
+    : op=join_operator op2 = table_or_subquery constraints=join_constraint join_keep_going?
+    ;
 
 join_operator
  : ','

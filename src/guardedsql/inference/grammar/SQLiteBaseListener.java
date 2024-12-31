@@ -259,6 +259,18 @@ public class SQLiteBaseListener implements SQLiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterJoin_operator(SQLiteParser.Join_operatorContext ctx) { }
 	/**
 	 * {@inheritDoc}

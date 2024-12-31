@@ -211,6 +211,16 @@ public interface SQLiteListener extends ParseTreeListener {
 	 */
 	void exitJoin_clause(SQLiteParser.Join_clauseContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link SQLiteParser#join_keep_going}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SQLiteParser#join_keep_going}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link SQLiteParser#join_operator}.
 	 * @param ctx the parse tree
 	 */

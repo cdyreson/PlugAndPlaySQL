@@ -32,7 +32,7 @@ grammar SQLite;
 
 // Package headers
 @header {
-    package guardedsql.grammar;
+    package guardedsql.inference.grammar;
     import guardedsql.database.DB;
 }
 
@@ -93,7 +93,7 @@ select_stmt
  ;
 
 select_or_values
- :outer_guard_clause[{db}]?
+    :
  K_SELECT ( K_DISTINCT | K_ALL )? result_column ( ',' result_column )*
    ( K_FROM ( table_or_subquery ( ',' table_or_subquery )* | join_clause ) )?
    ( K_WHERE expr )?
@@ -114,7 +114,7 @@ expr
  : literal_value
  | BIND_PARAMETER
  
- | ( ( database_name '.' )? table_name '.' )? column_name
+ | ( ( database_name '.' )? tableName=table_name '.' )? columnName=column_name
  | path_expr
  | unary_operator expr
  | expr ( '+' | '-' | '*' | '/' | '%' ) expr
@@ -137,26 +137,6 @@ expr
  | ( ( K_NOT )? K_EXISTS )? '(' select_stmt ')'
  | K_CASE expr? ( K_WHEN expr K_THEN expr )+ ( K_ELSE expr )? K_END 
  ;
-
-outer_guard_clause[DB db]
-:K_GUARD guard_clause
-;
-
-guard_clause
-:  (guard_key_name ((opening_brace guard_clause closing_brace) | (guard_comma guard_clause))? )+
-;
-
-guard_comma
-    : COMMA
-    ;
-
-opening_brace
-: '{'
-;
-
-closing_brace
-: '}'
-;
 
 comp_op
  : '||' | '<<' | '>>' | '&' | '|' | '<' | '<=' | '>' | '>=' | '=' | '==' | '!=' | '<>' | K_IS | K_IS K_NOT | K_IN | K_LIKE | K_GLOB | K_MATCH | K_REGEXP
@@ -186,13 +166,13 @@ common_table_expression
  ;
 
 result_column
- : '*'
- | table_name '.' '*'
- | expr ( K_AS? column_alias )? 
+ : allColumns='*'
+ | allColumnsTableName=table_name '.' '*'
+ | e=expr ( K_AS? alias=column_alias )? 
  ;
 
 table_or_subquery
- : ( database_name '.' )? t=table_name ( K_AS? alias=table_alias  )?
+ : ( database_name '.' )? t=table_name ( K_AS? ralias=table_rename_alias  )?
    ( K_INDEXED K_BY index_name
    | K_NOT K_INDEXED )?
    | '(' ( table_or_subquery ( ',' table_or_subquery )*
@@ -202,8 +182,13 @@ table_or_subquery
  ;
 
 join_clause
- : table_or_subquery ( join_operator table_or_subquery join_constraint )*
+// : op1=table_or_subquery ( op=join_operator op2=table_or_subquery constraints=join_constraint )*
+ : op1=table_or_subquery op=join_operator op2=table_or_subquery constraints=join_constraint join_keep_going?
  ;
+
+join_keep_going
+    : op=join_operator op2 = table_or_subquery constraints=join_constraint join_keep_going?
+    ;
 
 join_operator
  : ','
@@ -211,13 +196,12 @@ join_operator
  ;
 
 join_constraint
- : ( K_ON expr
+ : ( K_ON e=expr
    | K_USING '(' column_name ( ',' column_name )* ')' )?
  ;
 
 select_core
  : 
-   guard=outer_guard_clause[{db}]?
    select=select_clause
    from=from_clause
    where=where_clause
@@ -355,7 +339,6 @@ keyword
  | K_FULL
  | K_GLOB
  | K_GROUP
- | K_GUARD
  | K_HAVING
  | K_IF
  | K_IGNORE
@@ -494,6 +477,10 @@ table_alias
  : any_name
  ;
 
+table_rename_alias 
+ : any_name
+ ;
+
 transaction_name
  : any_name
  ;
@@ -597,7 +584,6 @@ K_FROM : F R O M;
 K_FULL : F U L L;
 K_GLOB : G L O B;
 K_GROUP : G R O U P;
-K_GUARD: G U A R D;
 K_HAVING : H A V I N G;
 K_IF : I F;
 K_IGNORE : I G N O R E;

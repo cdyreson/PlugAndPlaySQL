@@ -9,9 +9,9 @@ import guardedsql.database.DB;
 import guardedsql.inference.TableTree;
 
 // import guardedsql.database.ForeignKey;
-import guardedsql.joingraph.Graph;
-import guardedsql.tree.PatternTree;
-import guardedsql.tree.TreePath;
+//import guardedsql.joingraph.Graph;
+//import guardedsql.tree.PatternTree;
+//import guardedsql.tree.TreePath;
 
 import java.util.*;
 import org.antlr.v4.runtime.CharStream;
@@ -26,8 +26,8 @@ public class MyListener extends SQLiteBaseListener {
 
     Boolean verbose = false;
     // SQLiteParser parser;
-    String selectClause;
-    Map<String, TableTree> tableTreesMap = new HashMap();
+    //String selectClause;
+    //Map<String, TableTree> tableTreesMap = new HashMap();
 
     //private static PatternTree tree;
     private static DB db;
@@ -53,6 +53,11 @@ public class MyListener extends SQLiteBaseListener {
     public static Map<String, Set<String>> innerJoinMap = new HashMap();
     public static Map<String, Set<String>> relatedMapTC = new HashMap();
     public static Map<String, String> aliasMap = new HashMap();
+    
+    // Added for join constraints
+    public static List<String> joinTables = new ArrayList(5);
+    public static List<SQLiteParser.Join_operatorContext> joinOperators = new ArrayList(5);
+    public static List<SQLiteParser.ExprContext> joinConstraints = new ArrayList(5);
 
     public MyListener(SQLiteParser parser) {
         //this.parser = parser;
@@ -299,10 +304,23 @@ public class MyListener extends SQLiteBaseListener {
         if (verbose) {
             System.out.println("exitJoin_clause");
         }
-        List<ParseTree> pieces = ctx.constraints.children;
+
         String table1 = (ctx.op1.t != null)? getRawText(ctx.op1.t) : null;
         String table2 = (ctx.op2.t != null)? getRawText(ctx.op2.t) : null;
-        
+        // add to start of join chain
+        joinTables.add(table2); 
+        joinConstraints.add(ctx.constraints.e);
+        joinOperators.add(ctx.op);
+      
+        /*
+        int i = 0;
+        while (ctx.table_or_subquery(i) != null) {
+           System.out.println("zzz " + getRawText(ctx.table_or_subquery(i)));
+           i++;
+        }
+        */
+       //System.out.println(" table 1 " + table1 + " " +table2);
+   /*     
         if (ctx.join_operator(0).K_INNER() != null) {
             // This is an inner join
         } else if (ctx.join_operator(0).K_LEFT() != null) {
@@ -312,10 +330,18 @@ public class MyListener extends SQLiteBaseListener {
         } else {
             // Some other kind of join
         }
+    */
+    while (!joinTables.isEmpty()) {
+        table2 = joinTables.removeFirst();
+        //System.out.println("joining " + table2);
+        if (table2 == null) break;
+        SQLiteParser.Join_operatorContext operator = joinOperators.removeFirst();
+        SQLiteParser.ExprContext constraint = joinConstraints.removeFirst();
         
-        // Test if this is K_USING or K_ON
-        if (ctx.constraints.e == null) {
+            // Test if this is K_USING or K_ON
+        if (constraint == null) {
             // It is K_USING, deal with the list of column names
+            List<ParseTree> pieces = constraint.children;
             for (ParseTree p : pieces) {
                 //System.out.println("class is " + p.getClass());
                 String className = p.getClass().toString();
@@ -326,7 +352,8 @@ public class MyListener extends SQLiteBaseListener {
         } else {
             // This is an EXPR using K_ON
             Map<String,String> tempMap = new HashMap();
-            tempMap = processOnExpr(ctx.constraints.e, tempMap);
+            //System.out.println("ON EXPRESSION"); //zzzzzzzzzz
+            tempMap = processOnExpr(constraint, tempMap);
             if (tempMap == null) {
                 if (verbose) {
                     System.out.println("On expression not an equi-join");
@@ -334,9 +361,11 @@ public class MyListener extends SQLiteBaseListener {
             } else {
                 if (verbose) {
                     System.out.println("On expression is an equi-join, here are relations");
+                
                     for (String key: tempMap.keySet()) {
                         System.out.println(key + " related to " + tempMap.get(key));
                     }
+                }
                     if (!relatedMap.containsKey(table1)) {
                         relatedMap.put(table1, new HashSet());
                     }
@@ -356,9 +385,14 @@ public class MyListener extends SQLiteBaseListener {
                     
                     toNodes = relatedMap.get(table2);
                     toNodes.add(table1);                   
-                }
+    
             }
         }
+        
+        // Get ready for the next iteration
+        table1 = table2;
+    }
+    
 
         if (ctx.op.K_CROSS() != null) {
             // Ignore cross join
@@ -372,6 +406,29 @@ public class MyListener extends SQLiteBaseListener {
             
         } else {
             // no known kind of join do nothing
+        }
+    }
+
+    @Override
+    public void exitJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx) {
+        if (verbose) {
+            System.out.println("exitJoin_keep_going");
+        }
+        //List<ParseTree> pieces = ctx.constraints.children;
+        //System.out.println("asdf " + pieces.size());
+        //String table1 = (ctx.op1.t != null)? getRawText(ctx.op1.t) : null;
+        String table2 = (ctx.op2.t != null)? getRawText(ctx.op2.t) : null;
+        //String operator = (ctx.op) != null? getRawText(ctx.op) : null;
+        joinTables.addLast(table2);
+        joinConstraints.addLast(ctx.constraints.e);
+        joinOperators.addLast(ctx.op);
+
+    }
+    
+    @Override
+    public void enterJoin_keep_going(SQLiteParser.Join_keep_goingContext ctx) {
+        if (verbose) {
+            System.out.println("enterJoin_clause");
         }
     }
 
